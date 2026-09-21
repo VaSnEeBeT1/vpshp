@@ -1,6 +1,6 @@
 # ============================================================
 #  bot.py — Telegram-бот ELFLIQ_VapeLab + Flask + WebApp
-#  Render-ready + CORS для GitHub Pages
+#  Render-ready + CORS для GitHub Pages + мультиадмин
 # ============================================================
 
 import asyncio
@@ -24,7 +24,13 @@ from aiogram.enums import ParseMode
 
 # ===================== CONFIG =====================
 BOT_TOKEN    = os.environ.get("BOT_TOKEN", "8717566441:AAGawmDkoIUv2INBePTrdDEH8lKNBZAeaGw")
-ADMIN_ID     = int(os.environ.get("ADMIN_ID", "5422357973"))
+
+# Список админов (получатели заказов в личку + доступ к /admin)
+ADMIN_IDS    = [5422357973, 1818878028, 8060630121]
+
+# Первый в списке — "главный" (например, для логики "не отправлять покупателю, если это админ")
+ADMIN_ID     = ADMIN_IDS[0]
+
 ADMIN_KEY    = os.environ.get("ADMIN_KEY", "elfliq-super-secret-2026")
 WEBAPP_URL   = os.environ.get("WEBAPP_URL", "https://vasneebet1.github.io/vpshp/")
 LISTEN_HOST  = "0.0.0.0"
@@ -227,23 +233,28 @@ def order():
     )
 
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    ok_admin = False
+
+    ok_admin_any = False
     ok_buyer = False
 
-    try:
-        r = rq.post(url, json={
-            "chat_id": ADMIN_ID,
-            "text": admin_text,
-            "parse_mode": "HTML",
-            "disable_web_page_preview": True
-        }, timeout=10)
-        ok_admin = r.status_code == 200
-        if not ok_admin:
-            logging.error("Admin send failed: %s %s", r.status_code, r.text)
-    except Exception as e:
-        logging.exception("Admin send exception: %s", e)
+    # --- отправка ВСЕМ админам ---
+    for admin_id in ADMIN_IDS:
+        try:
+            r = rq.post(url, json={
+                "chat_id": admin_id,
+                "text": admin_text,
+                "parse_mode": "HTML",
+                "disable_web_page_preview": True
+            }, timeout=10)
+            if r.status_code == 200:
+                ok_admin_any = True
+            else:
+                logging.error("Admin %s send failed: %s %s", admin_id, r.status_code, r.text)
+        except Exception as e:
+            logging.exception("Admin %s send exception: %s", admin_id, e)
 
-    if tg_id and int(tg_id) != int(ADMIN_ID):
+    # --- отправка покупателю (если он не админ) ---
+    if tg_id and int(tg_id) not in ADMIN_IDS:
         try:
             r2 = rq.post(url, json={
                 "chat_id": int(tg_id),
@@ -255,7 +266,7 @@ def order():
         except Exception as e:
             logging.exception("Buyer send exception: %s", e)
 
-    return _cors(jsonify({"ok": ok_admin, "ok_buyer": ok_buyer})), (200 if ok_admin else 500)
+    return _cors(jsonify({"ok": ok_admin_any, "ok_buyer": ok_buyer})), (200 if ok_admin_any else 500)
 
 
 # ============================================================
@@ -282,7 +293,17 @@ def main_menu_kb():
 
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
-    await message.answer(WELCOME_TEXT, reply_markup=main_menu_kb())
+    try:
+        await message.answer(WELCOME_TEXT, reply_markup=main_menu_kb())
+    except Exception as e:
+        logging.exception("cmd_start error: %s", e)
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📋 Наличие (список)",
+                                  callback_data="show_stock")],
+            [InlineKeyboardButton(text="📢 Наш канал",
+                                  url="https://t.me/ELFLIQ_LAB")],
+        ])
+        await message.answer(WELCOME_TEXT, reply_markup=kb)
 
 
 @dp.callback_query(F.data == "show_stock")
@@ -300,6 +321,7 @@ async def main():
     logging.info("Flask: http://%s:%s", LISTEN_HOST, LISTEN_PORT)
     logging.info("DATA_FILE: %s", os.path.abspath(DATA_FILE))
     logging.info("WEBAPP_URL: %s", WEBAPP_URL)
+    logging.info("ADMIN_IDS: %s", ADMIN_IDS)
     await dp.start_polling(bot)
 
 
