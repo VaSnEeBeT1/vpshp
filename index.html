@@ -189,7 +189,7 @@
     <script>
         var MANAGER_USERNAME = "ELFLIQ_Mng";
         var PAYMENT_METHOD   = "Картой";
-        var ORDER_URL        = "/order";
+        var ORDER_URL        = "https://vpshp.onrender.com/order";
 
         var CATALOG = [
             { id: "2",  name: "Elflio / Strawberry Banana",               img: "img/strawberrybanana.jpg",               price: 55 },
@@ -229,7 +229,7 @@
         //  ЗАГРУЗКА QTY ИЗ АДМИНКИ (stock.json)
         // ============================================================
         function loadStockQty() {
-            return fetch("/api/stock", { cache: "no-store" })
+            return fetch("https://vpshp.onrender.com/api/stock", { cache: "no-store" })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     STOCK_QTY = data || {};
