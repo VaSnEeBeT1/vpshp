@@ -1,6 +1,6 @@
 # ============================================================
 #  bot.py — Telegram-бот ELFLIQ_VapeLab + Flask + WebApp
-#  Render-ready
+#  Render-ready + CORS для GitHub Pages
 # ============================================================
 
 import asyncio
@@ -89,6 +89,13 @@ def build_catalog_text():
 # ============================================================
 #  FLASK
 # ============================================================
+def _cors(resp):
+    resp.headers["Access-Control-Allow-Origin"]  = "*"
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return resp
+
+
 @app.route("/", methods=["GET", "HEAD"])
 @app.route("/health", methods=["GET", "HEAD"])
 def health():
@@ -116,52 +123,46 @@ def admin_page():
 @app.route("/admin/api/stock", methods=["GET", "POST", "OPTIONS"])
 def admin_api_stock():
     if request.method == "OPTIONS":
-        r = jsonify({"ok": True})
-        r.headers["Access-Control-Allow-Origin"]  = "*"
-        r.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        r.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        return r
+        return _cors(jsonify({"ok": True}))
 
     key = request.args.get("key", "")
     if key != ADMIN_KEY:
-        return jsonify({"ok": False, "error": "forbidden"}), 403
+        return _cors(jsonify({"ok": False, "error": "forbidden"})), 403
 
     if request.method == "GET":
-        return jsonify({"ok": True, "stock": load_stock()})
+        return _cors(jsonify({"ok": True, "stock": load_stock()}))
 
     data = request.get_json(silent=True) or {}
     item_id = str(data.get("id", "")).strip()
     qty = data.get("qty")
     if not item_id or qty is None:
-        return jsonify({"ok": False, "error": "missing id or qty"}), 400
+        return _cors(jsonify({"ok": False, "error": "missing id or qty"})), 400
     try:
         qty = max(0, int(qty))
     except (ValueError, TypeError):
-        return jsonify({"ok": False, "error": "qty must be int"}), 400
+        return _cors(jsonify({"ok": False, "error": "qty must be int"})), 400
 
     stock = load_stock()
     if item_id not in stock:
-        return jsonify({"ok": False, "error": "item not found"}), 404
+        return _cors(jsonify({"ok": False, "error": "item not found"})), 404
     stock[item_id]["qty"] = qty
     save_stock(stock)
-    return jsonify({"ok": True, "id": item_id, "qty": qty})
+    return _cors(jsonify({"ok": True, "id": item_id, "qty": qty}))
 
 
-@app.route("/api/stock", methods=["GET"])
+@app.route("/api/stock", methods=["GET", "OPTIONS"])
 def public_stock():
+    if request.method == "OPTIONS":
+        return _cors(jsonify({"ok": True}))
     stock = load_stock()
     out = {k: int(v.get("qty", 0)) for k, v in stock.items()}
-    return jsonify(out)
+    return _cors(jsonify(out))
 
 
 @app.route("/order", methods=["POST", "OPTIONS"])
 def order():
     if request.method == "OPTIONS":
-        resp = jsonify({"ok": True})
-        resp.headers["Access-Control-Allow-Origin"]  = "*"
-        resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-        return resp
+        return _cors(jsonify({"ok": True}))
 
     data     = request.get_json(silent=True) or {}
     name     = str(data.get("name", "")).strip()
@@ -173,9 +174,7 @@ def order():
     total    = float(data.get("total", 0) or 0)
 
     if not items:
-        r = jsonify({"ok": False, "error": "empty items"})
-        r.headers["Access-Control-Allow-Origin"] = "*"
-        return r, 400
+        return _cors(jsonify({"ok": False, "error": "empty items"})), 400
 
     # --- ПРОВЕРКА НАЛИЧИЯ И СПИСАНИЕ ---
     stock = load_stock()
@@ -183,16 +182,11 @@ def order():
         iid = str(it.get("id", ""))
         qty_needed = int(it.get("qty", 0))
         if iid not in stock:
-            r = jsonify({"ok": False, "error": f"item {iid} not found"})
-            r.headers["Access-Control-Allow-Origin"] = "*"
-            return r, 400
+            return _cors(jsonify({"ok": False, "error": f"item {iid} not found"})), 400
         have = int(stock[iid].get("qty", 0))
         if have < qty_needed:
-            r = jsonify({"ok": False, "error": f"not enough stock for {iid}: have {have}, need {qty_needed}"})
-            r.headers["Access-Control-Allow-Origin"] = "*"
-            return r, 400
+            return _cors(jsonify({"ok": False, "error": f"not enough stock for {iid}: have {have}, need {qty_needed}"})), 400
 
-    # Списываем
     for it in items:
         iid = str(it.get("id", ""))
         qty_needed = int(it.get("qty", 0))
@@ -261,9 +255,7 @@ def order():
         except Exception as e:
             logging.exception("Buyer send exception: %s", e)
 
-    resp = jsonify({"ok": ok_admin, "ok_buyer": ok_buyer})
-    resp.headers["Access-Control-Allow-Origin"] = "*"
-    return resp, (200 if ok_admin else 500)
+    return _cors(jsonify({"ok": ok_admin, "ok_buyer": ok_buyer})), (200 if ok_admin else 500)
 
 
 # ============================================================
@@ -306,6 +298,8 @@ def run_flask():
 async def main():
     threading.Thread(target=run_flask, daemon=True).start()
     logging.info("Flask: http://%s:%s", LISTEN_HOST, LISTEN_PORT)
+    logging.info("DATA_FILE: %s", os.path.abspath(DATA_FILE))
+    logging.info("WEBAPP_URL: %s", WEBAPP_URL)
     await dp.start_polling(bot)
 
 
