@@ -26,7 +26,7 @@ from aiogram.enums import ParseMode
 BOT_TOKEN    = os.environ.get("BOT_TOKEN", "8717566441:AAGawmDkoIUv2INBePTrdDEH8lKNBZAeaGw")
 ADMIN_ID     = int(os.environ.get("ADMIN_ID", "5422357973"))
 ADMIN_KEY    = os.environ.get("ADMIN_KEY", "elfliq-super-secret-2026")
-WEBAPP_URL   = os.environ.get("WEBAPP_URL", "http://localhost:8080/webapp")
+WEBAPP_URL   = os.environ.get("WEBAPP_URL", "https://vasneebet1.github.io/vpshp/")
 LISTEN_HOST  = "0.0.0.0"
 LISTEN_PORT  = int(os.environ.get("PORT", "8080"))
 DATA_DIR     = os.environ.get("DATA_DIR", ".")
