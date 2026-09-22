@@ -161,6 +161,12 @@
             font-size: 16px; font-weight: 800; color: var(--price);
             letter-spacing: 0.2px; white-space: nowrap;
         }
+        .card .price .per {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-left: 2px;
+        }
 
         .qty-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
         .qty-btn {
@@ -232,7 +238,6 @@
         <p id="headerSub">Каталог · только жидкости Elfliq</p>
     </div>
 
-    <!-- Кнопки-категории -->
     <div class="categories">
         <button class="cat-btn active" data-cat="liquids" id="catLiquids">
             <div class="cat-img">
@@ -268,67 +273,84 @@
         var STOCK_URL        = "https://vpshp.onrender.com/api/stock";
 
         // ============================================================
+        //  ЦЕНОВЫЕ СЕТКИ (за штуку, зависит от общего кол-ва в корзине)
+        //  Жидкости:  1шт → 55 | 2шт → 50 | 5шт → 45 | 10+ → 40
+        //  Картриджи: 1-2шт → 30 | 3+ → 25
+        // ============================================================
+        function pricePerItem(category, qty) {
+            if (qty <= 0) return 0;
+            if (category === "liquids") {
+                if (qty >= 10) return 40;
+                if (qty >= 5)  return 45;
+                if (qty >= 2)  return 50;
+                return 55;
+            }
+            if (category === "cartridges") {
+                if (qty >= 3) return 25;
+                return 30;
+            }
+            return 0;
+        }
+
+        // ============================================================
         //  LIQUIDS — жижи
         // ============================================================
         var LIQUIDS = [
-            { id: "2",  name: "Elflio / Strawberry Banana",               img: "img/strawberrybanana.jpg",               price: 55 },
-            { id: "3",  name: "Elflio / Cherry Lemon Peach",              img: "img/cherrylemonpeach.jpg",               price: 55 },
-            { id: "4",  name: "Elflio / Blueberry Raspberry Pomegranate", img: "img/blueberryraspberrypomegranate.jpg",  price: 55 },
-            { id: "6",  name: "Elflio / Raspberry Lychee",                img: "img/raspberrylychee.jpg",                price: 55 },
-            { id: "7",  name: "Elflio / Pineapple Ice",                   img: "img/pineappleIce.jpg",                   price: 55 },
-            { id: "8",  name: "Elflio / Lemon Lime",                      img: "img/lemonlime.jpg",                      price: 55 },
-            { id: "10", name: "Elflio / Blueberry",                       img: "img/blueberry.jpg",                      price: 55 },
-            { id: "12", name: "Elflio / Sour apple",                      img: "img/sourapple.jpg",                      price: 55 },
-            { id: "13", name: "Elflio / Grape",                           img: "img/grape.jpg",                          price: 55 },
-            { id: "16", name: "Elflio / Apple peach",                     img: "img/applepeach.jpg",                     price: 55 },
-            { id: "17", name: "Elflio / Cola",                            img: "img/cola.jpg",                           price: 55 },
-            { id: "18", name: "Elflio / Peach ice",                       img: "img/peachice.jpg",                       price: 55 },
-            { id: "19", name: "Elflio / Pinacolada",                      img: "img/pinacolada.jpg",                     price: 55 },
-            { id: "20", name: "Elflio / Blackberry lemon",                img: "img/blackberrylemon.jpg",                price: 55 },
-            { id: "21", name: "Elflio / Pink Grapefruit",                 img: "img/pinkgrapefruit.jpg",                 price: 55 },
-            { id: "22", name: "Elflio / Blackcurrant anised (5%)",        img: "img/blackcurrant.jpg",                   price: 55 },
+            { id: "2",  name: "Elflio / Strawberry Banana",               img: "img/strawberrybanana.jpg",               cat: "liquids" },
+            { id: "3",  name: "Elflio / Cherry Lemon Peach",              img: "img/cherrylemonpeach.jpg",               cat: "liquids" },
+            { id: "4",  name: "Elflio / Blueberry Raspberry Pomegranate", img: "img/blueberryraspberrypomegranate.jpg",  cat: "liquids" },
+            { id: "6",  name: "Elflio / Raspberry Lychee",                img: "img/raspberrylychee.jpg",                cat: "liquids" },
+            { id: "7",  name: "Elflio / Pineapple Ice",                   img: "img/pineappleIce.jpg",                   cat: "liquids" },
+            { id: "8",  name: "Elflio / Lemon Lime",                      img: "img/lemonlime.jpg",                      cat: "liquids" },
+            { id: "10", name: "Elflio / Blueberry",                       img: "img/blueberry.jpg",                      cat: "liquids" },
+            { id: "12", name: "Elflio / Sour apple",                      img: "img/sourapple.jpg",                      cat: "liquids" },
+            { id: "13", name: "Elflio / Grape",                           img: "img/grape.jpg",                          cat: "liquids" },
+            { id: "16", name: "Elflio / Apple peach",                     img: "img/applepeach.jpg",                     cat: "liquids" },
+            { id: "17", name: "Elflio / Cola",                            img: "img/cola.jpg",                           cat: "liquids" },
+            { id: "18", name: "Elflio / Peach ice",                       img: "img/peachice.jpg",                       cat: "liquids" },
+            { id: "19", name: "Elflio / Pinacolada",                      img: "img/pinacolada.jpg",                     cat: "liquids" },
+            { id: "20", name: "Elflio / Blackberry lemon",                img: "img/blackberrylemon.jpg",                cat: "liquids" },
+            { id: "21", name: "Elflio / Pink Grapefruit",                 img: "img/pinkgrapefruit.jpg",                 cat: "liquids" },
+            { id: "22", name: "Elflio / Blackcurrant anised (5%)",        img: "img/blackcurrant.jpg",                   cat: "liquids" },
 
-            { id: "100", name: "Elflio / Apple Pear",                     img: "img/ApplePear.jpg",                     price: 55 },
-            { id: "101", name: "Elflio / Blueberry Rose Mint",            img: "img/BlueberryRoseMint.jpg",             price: 55 },
-            { id: "102", name: "Elflio / Blueberry Sour Raspberry",       img: "img/BlueberrySourRaspberry.jpg",        price: 55 },
-            { id: "103", name: "Elflio / Blue Razz",                      img: "img/BlueRazz.jpg",                      price: 55 },
-            { id: "104", name: "Elflio / Blue Razz Lemonade",             img: "img/BlueRazzLemonade.jpg",              price: 55 },
-            { id: "105", name: "Elflio / Cherry",                         img: "img/Cherry.jpg",                        price: 55 },
-            { id: "106", name: "Elflio / Cherry Cola",                    img: "img/CherryCola.jpg",                    price: 55 },
-            { id: "107", name: "Elflio / Cool Mint",                      img: "img/CoolMint.jpg",                      price: 55 },
-            { id: "108", name: "Elflio / Cuba Tobacco",                   img: "img/CubaTobacco.jpg",                   price: 55 },
-            { id: "109", name: "Elflio / Double Apple",                   img: "img/DoubleApple.jpg",                   price: 55 },
-            { id: "110", name: "Elflio / Elfbull Ice",                    img: "img/ElfbullIce.jpg",                    price: 55 },
-            { id: "111", name: "Elflio / Elf Jack",                       img: "img/ElfJack.jpg",                       price: 55 },
-            { id: "112", name: "Elflio / Grape Cherry",                   img: "img/GrapeCherry.jpg",                   price: 55 },
-            { id: "113", name: "Elflio / Green Grape Rose",               img: "img/GreenGrapeRose.jpg",                price: 55 },
-            { id: "114", name: "Elflio / Jasmine Raspberry",              img: "img/JasmineRaspberry.jpg",              price: 55 },
-            { id: "115", name: "Elflio / Kiwi Passion Fruit Guava",       img: "img/KiwiPassionFruitGuava.jpg",         price: 55 },
-            { id: "116", name: "Elflio / Ocean Mint",                     img: "img/OceanMint.jpg",                     price: 55 },
-            { id: "117", name: "Elflio / P&B Cloudd",                     img: "img/PBCloudd.jpg",                      price: 55 },
-            { id: "118", name: "Elflio / Pineapple Colada",               img: "img/PineappleColada.jpg",               price: 55 },
-            { id: "119", name: "Elflio / Pink Lemonade",                  img: "img/PinkLemonade.jpg",                  price: 55 },
-            { id: "120", name: "Elflio / Pink Lemonade Soda",             img: "img/PinkLemonadeSoda.jpg",              price: 55 },
-            { id: "121", name: "Elflio / Raspberry Lychee",               img: "img/RaspberryLychee.jpg",               price: 55 },
-            { id: "122", name: "Elflio / Rhubarb Snoow",                  img: "img/RhubarbSnoow.jpg",                  price: 55 },
-            { id: "123", name: "Elflio / Snoow Tobacco",                  img: "img/SnoowTobacco.jpg",                  price: 55 },
-            { id: "124", name: "Elflio / Sour Watermelon Gummy",          img: "img/SourWatermelonGummy.jpg",           price: 55 },
-            { id: "125", name: "Elflio / Spearmint",                      img: "img/Spearmint.jpg",                     price: 55 },
-            { id: "126", name: "Elflio / Strawberry Cherry Lemon",        img: "img/StrawberryCherryLemon.jpg",         price: 55 },
-            { id: "127", name: "Elflio / Strawberry Ice",                 img: "img/StrawberryIce.jpg",                 price: 55 },
-            { id: "128", name: "Elflio / Strawberry Kiwi",                img: "img/StrawberryKiwi.jpg",                price: 55 },
-            { id: "129", name: "Elflio / Strawberry Raspberry Cherry Ice",img: "img/StrawberryRaspberryCherryIce.jpg",  price: 55 },
-            { id: "130", name: "Elflio / Strawberry Snoow",               img: "img/StrawberrySnoow.jpg",               price: 55 },
-            { id: "131", name: "Elflio / Watermelon",                     img: "img/Watermelon.jpg",                    price: 55 },
-            { id: "132", name: "Elflio / Watermelon Cherry",              img: "img/WatermelonCherry.jpg",              price: 55 },
+            { id: "100", name: "Elflio / Apple Pear",                     img: "img/ApplePear.jpg",                     cat: "liquids" },
+            { id: "101", name: "Elflio / Blueberry Rose Mint",            img: "img/BlueberryRoseMint.jpg",             cat: "liquids" },
+            { id: "102", name: "Elflio / Blueberry Sour Raspberry",       img: "img/BlueberrySourRaspberry.jpg",        cat: "liquids" },
+            { id: "103", name: "Elflio / Blue Razz",                      img: "img/BlueRazz.jpg",                      cat: "liquids" },
+            { id: "104", name: "Elflio / Blue Razz Lemonade",             img: "img/BlueRazzLemonade.jpg",              cat: "liquids" },
+            { id: "105", name: "Elflio / Cherry",                         img: "img/Cherry.jpg",                        cat: "liquids" },
+            { id: "106", name: "Elflio / Cherry Cola",                    img: "img/CherryCola.jpg",                    cat: "liquids" },
+            { id: "107", name: "Elflio / Cool Mint",                      img: "img/CoolMint.jpg",                      cat: "liquids" },
+            { id: "108", name: "Elflio / Cuba Tobacco",                   img: "img/CubaTobacco.jpg",                   cat: "liquids" },
+            { id: "109", name: "Elflio / Double Apple",                   img: "img/DoubleApple.jpg",                   cat: "liquids" },
+            { id: "110", name: "Elflio / Elfbull Ice",                    img: "img/ElfbullIce.jpg",                    cat: "liquids" },
+            { id: "111", name: "Elflio / Elf Jack",                       img: "img/ElfJack.jpg",                       cat: "liquids" },
+            { id: "112", name: "Elflio / Grape Cherry",                   img: "img/GrapeCherry.jpg",                   cat: "liquids" },
+            { id: "113", name: "Elflio / Green Grape Rose",               img: "img/GreenGrapeRose.jpg",                cat: "liquids" },
+            { id: "114", name: "Elflio / Jasmine Raspberry",              img: "img/JasmineRaspberry.jpg",              cat: "liquids" },
+            { id: "115", name: "Elflio / Kiwi Passion Fruit Guava",       img: "img/KiwiPassionFruitGuava.jpg",         cat: "liquids" },
+            { id: "116", name: "Elflio / Ocean Mint",                     img: "img/OceanMint.jpg",                     cat: "liquids" },
+            { id: "117", name: "Elflio / P&B Cloudd",                     img: "img/PBCloudd.jpg",                      cat: "liquids" },
+            { id: "118", name: "Elflio / Pineapple Colada",               img: "img/PineappleColada.jpg",               cat: "liquids" },
+            { id: "119", name: "Elflio / Pink Lemonade",                  img: "img/PinkLemonade.jpg",                  cat: "liquids" },
+            { id: "120", name: "Elflio / Pink Lemonade Soda",             img: "img/PinkLemonadeSoda.jpg",              cat: "liquids" },
+            { id: "121", name: "Elflio / Raspberry Lychee",               img: "img/RaspberryLychee.jpg",               cat: "liquids" },
+            { id: "122", name: "Elflio / Rhubarb Snoow",                  img: "img/RhubarbSnoow.jpg",                  cat: "liquids" },
+            { id: "123", name: "Elflio / Snoow Tobacco",                  img: "img/SnoowTobacco.jpg",                  cat: "liquids" },
+            { id: "124", name: "Elflio / Sour Watermelon Gummy",          img: "img/SourWatermelonGummy.jpg",           cat: "liquids" },
+            { id: "125", name: "Elflio / Spearmint",                      img: "img/Spearmint.jpg",                     cat: "liquids" },
+            { id: "126", name: "Elflio / Strawberry Cherry Lemon",        img: "img/StrawberryCherryLemon.jpg",         cat: "liquids" },
+            { id: "127", name: "Elflio / Strawberry Ice",                 img: "img/StrawberryIce.jpg",                 cat: "liquids" },
+            { id: "128", name: "Elflio / Strawberry Kiwi",                img: "img/StrawberryKiwi.jpg",                cat: "liquids" },
+            { id: "129", name: "Elflio / Strawberry Raspberry Cherry Ice",img: "img/StrawberryRaspberryCherryIce.jpg",  cat: "liquids" },
+            { id: "130", name: "Elflio / Strawberry Snoow",               img: "img/StrawberrySnoow.jpg",               cat: "liquids" },
+            { id: "131", name: "Elflio / Watermelon",                     img: "img/Watermelon.jpg",                    cat: "liquids" },
+            { id: "132", name: "Elflio / Watermelon Cherry",              img: "img/WatermelonCherry.jpg",              cat: "liquids" },
         ];
 
-        // ============================================================
-        //  CARTRIDGES — картриджи
-        // ============================================================
         var CARTRIDGES = [
-            { id: "200", name: "Xros 0,4 om",     img: "img/xross.jpg", price: 55 },
-            { id: "201", name: "OXVA xlim 0,6 om", img: "img/oxva.jpg",  price: 55 },
+            { id: "200", name: "Xros 0,4 om",     img: "img/xross.jpg", cat: "cartridges" },
+            { id: "201", name: "OXVA xlim 0,6 om", img: "img/oxva.jpg",  cat: "cartridges" },
         ];
 
         // ============================================================
@@ -359,6 +381,30 @@
                 if (list[i].id === id) return list[i];
             }
             return null;
+        }
+
+        // Считаем, сколько всего штук в корзине по каждой категории
+        function cartCountByCat(cat) {
+            var total = 0;
+            Object.keys(cart).forEach(function (k) {
+                var item = getItemById(k);
+                if (item && item.cat === cat) total += cart[k];
+            });
+            return total;
+        }
+
+        // Итоговая цена всей корзины (с учётом сеток)
+        function cartTotal() {
+            var liquidsQty    = cartCountByCat("liquids");
+            var cartridgesQty = cartCountByCat("cartridges");
+            var lp = pricePerItem("liquids", liquidsQty);
+            var cp = pricePerItem("cartridges", cartridgesQty);
+            return liquidsQty * lp + cartridgesQty * cp;
+        }
+
+        // Сколько сейчас стоит 1 шт этой категории (по текущему кол-ву в корзине)
+        function currentUnitPrice(cat) {
+            return pricePerItem(cat, cartCountByCat(cat));
         }
 
         function loadStockQty() {
@@ -397,6 +443,8 @@
             box.innerHTML = "";
 
             var list = getActiveCatalog();
+            var unitPrice = currentUnitPrice(currentCategory);
+            var cartQty = cartCountByCat(currentCategory);
 
             if (!list.length) {
                 var emptyDiv = document.createElement("div");
@@ -444,6 +492,9 @@
                     }
                 }
 
+                // Отображаем цену за штуку при текущем количестве в корзине
+                var priceLine = unitPrice + ' zł<span class="per">/шт</span>';
+
                 var card = document.createElement("div");
                 card.className = "card" + (inStock ? "" : " out-of-stock");
                 card.innerHTML =
@@ -452,7 +503,7 @@
                         '<div class="name">' + esc(item.name) + '</div>' +
                         stockHtml +
                         '<div class="bottom-row">' +
-                            '<div class="price">' + item.price + ' zł</div>' +
+                            '<div class="price">' + priceLine + '</div>' +
                             '<div class="qty-controls">' + controlsHtml + '</div>' +
                         '</div>' +
                     '</div>';
@@ -461,12 +512,9 @@
         }
 
         function renderCartBar() {
-            var totalItems = 0, totalSum = 0;
-            Object.keys(cart).forEach(function (k) {
-                totalItems += cart[k];
-                var item = getItemById(k);
-                if (item) totalSum += item.price * cart[k];
-            });
+            var totalItems = 0;
+            Object.keys(cart).forEach(function (k) { totalItems += cart[k]; });
+            var totalSum = cartTotal();
 
             var info = document.getElementById("cartInfo");
             var btn = document.getElementById("btnOrder");
@@ -510,15 +558,21 @@
         function sendOrder() {
             var lines = [], items = [], totalSum = 0;
 
+            var liquidsQty    = cartCountByCat("liquids");
+            var cartridgesQty = cartCountByCat("cartridges");
+            var lp = pricePerItem("liquids", liquidsQty);
+            var cp = pricePerItem("cartridges", cartridgesQty);
+
             Object.keys(cart).forEach(function (k) {
                 var qty = cart[k] || 0;
                 if (qty <= 0) return;
                 var item = getItemById(k);
                 if (!item) return;
-                var sum = item.price * qty;
+                var unit = (item.cat === "liquids") ? lp : cp;
+                var sum = unit * qty;
                 totalSum += sum;
-                lines.push(item.name + " × " + qty + " = " + fmtPrice(sum));
-                items.push({ id: item.id, name: item.name, qty: qty, price: item.price, sum: sum });
+                lines.push(item.name + " × " + qty + " × " + unit + " zł = " + fmtPrice(sum));
+                items.push({ id: item.id, name: item.name, qty: qty, price: unit, sum: sum });
             });
 
             if (!items.length) { showToast("Корзина пуста"); return; }
