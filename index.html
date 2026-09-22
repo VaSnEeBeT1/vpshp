@@ -190,8 +190,10 @@
         var MANAGER_USERNAME = "ELFLIQ_Mng";
         var PAYMENT_METHOD   = "Картой";
         var ORDER_URL        = "https://vpshp.onrender.com/order";
+        var STOCK_URL        = "https://vpshp.onrender.com/api/stock";
 
         var CATALOG = [
+            // ─── Старые позиции ───────────────────────────────
             { id: "2",  name: "Elflio / Strawberry Banana",               img: "img/strawberrybanana.jpg",               price: 55 },
             { id: "3",  name: "Elflio / Cherry Lemon Peach",              img: "img/cherrylemonpeach.jpg",               price: 55 },
             { id: "4",  name: "Elflio / Blueberry Raspberry Pomegranate", img: "img/blueberryraspberrypomegranate.jpg",  price: 55 },
@@ -208,6 +210,41 @@
             { id: "20", name: "Elflio / Blackberry lemon",                img: "img/blackberrylemon.jpg",                price: 55 },
             { id: "21", name: "Elflio / Pink Grapefruit",                 img: "img/pinkgrapefruit.jpg",                 price: 55 },
             { id: "22", name: "Elflio / Blackcurrant anised (5%)",        img: "img/blackcurrant.jpg",                   price: 55 },
+
+            // ─── Новые позиции ────────────────────────────────
+            { id: "100", name: "Elflio / Apple Pear",                     img: "img/ApplePear.jpg",                     price: 55 },
+            { id: "101", name: "Elflio / Blueberry Rose Mint",            img: "img/BlueberryRoseMint.jpg",             price: 55 },
+            { id: "102", name: "Elflio / Blueberry Sour Raspberry",       img: "img/BlueberrySourRaspberry.jpg",        price: 55 },
+            { id: "103", name: "Elflio / Blue Razz",                      img: "img/BlueRazz.jpg",                      price: 55 },
+            { id: "104", name: "Elflio / Blue Razz Lemonade",             img: "img/BlueRazzLemonade.jpg",              price: 55 },
+            { id: "105", name: "Elflio / Cherry",                         img: "img/Cherry.jpg",                        price: 55 },
+            { id: "106", name: "Elflio / Cherry Cola",                    img: "img/CherryCola.jpg",                    price: 55 },
+            { id: "107", name: "Elflio / Cool Mint",                      img: "img/CoolMint.jpg",                      price: 55 },
+            { id: "108", name: "Elflio / Cuba Tobacco",                   img: "img/CubaTobacco.jpg",                   price: 55 },
+            { id: "109", name: "Elflio / Double Apple",                   img: "img/DoubleApple.jpg",                   price: 55 },
+            { id: "110", name: "Elflio / Elfbull Ice",                    img: "img/ElfbullIce.jpg",                    price: 55 },
+            { id: "111", name: "Elflio / Elf Jack",                       img: "img/ElfJack.jpg",                       price: 55 },
+            { id: "112", name: "Elflio / Grape Cherry",                   img: "img/GrapeCherry.jpg",                   price: 55 },
+            { id: "113", name: "Elflio / Green Grape Rose",               img: "img/GreenGrapeRose.jpg",                price: 55 },
+            { id: "114", name: "Elflio / Jasmine Raspberry",              img: "img/JasmineRaspberry.jpg",              price: 55 },
+            { id: "115", name: "Elflio / Kiwi Passion Fruit Guava",       img: "img/KiwiPassionFruitGuava.jpg",         price: 55 },
+            { id: "116", name: "Elflio / Ocean Mint",                     img: "img/OceanMint.jpg",                     price: 55 },
+            { id: "117", name: "Elflio / P&B Cloudd",                     img: "img/PBCloudd.jpg",                      price: 55 },
+            { id: "118", name: "Elflio / Pineapple Colada",               img: "img/PineappleColada.jpg",               price: 55 },
+            { id: "119", name: "Elflio / Pink Lemonade",                  img: "img/PinkLemonade.jpg",                  price: 55 },
+            { id: "120", name: "Elflio / Pink Lemonade Soda",             img: "img/PinkLemonadeSoda.jpg",              price: 55 },
+            { id: "121", name: "Elflio / Raspberry Lychee",               img: "img/RaspberryLychee.jpg",               price: 55 },
+            { id: "122", name: "Elflio / Rhubarb Snoow",                  img: "img/RhubarbSnoow.jpg",                  price: 55 },
+            { id: "123", name: "Elflio / Snoow Tobacco",                  img: "img/SnoowTobacco.jpg",                  price: 55 },
+            { id: "124", name: "Elflio / Sour Watermelon Gummy",          img: "img/SourWatermelonGummy.jpg",           price: 55 },
+            { id: "125", name: "Elflio / Spearmint",                      img: "img/Spearmint.jpg",                     price: 55 },
+            { id: "126", name: "Elflio / Strawberry Cherry Lemon",        img: "img/StrawberryCherryLemon.jpg",         price: 55 },
+            { id: "127", name: "Elflio / Strawberry Ice",                 img: "img/StrawberryIce.jpg",                 price: 55 },
+            { id: "128", name: "Elflio / Strawberry Kiwi",                img: "img/StrawberryKiwi.jpg",                price: 55 },
+            { id: "129", name: "Elflio / Strawberry Raspberry Cherry Ice",img: "img/StrawberryRaspberryCherryIce.jpg",  price: 55 },
+            { id: "130", name: "Elflio / Strawberry Snoow",               img: "img/StrawberrySnoow.jpg",               price: 55 },
+            { id: "131", name: "Elflio / Watermelon",                     img: "img/Watermelon.jpg",                    price: 55 },
+            { id: "132", name: "Elflio / Watermelon Cherry",              img: "img/WatermelonCherry.jpg",              price: 55 },
         ];
 
         var cart = {};
@@ -229,7 +266,7 @@
         //  ЗАГРУЗКА QTY ИЗ АДМИНКИ (stock.json)
         // ============================================================
         function loadStockQty() {
-            return fetch("https://vpshp.onrender.com/api/stock", { cache: "no-store" })
+            return fetch(STOCK_URL, { cache: "no-store" })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     STOCK_QTY = data || {};
@@ -409,7 +446,7 @@
                     showToast(res && res.error ? "Ошибка: " + res.error : "Ошибка отправки", true);
                     btn.disabled = false;
                     btn.textContent = "Заказать";
-                    loadStockQty();  // подтянуть актуальные остатки
+                    loadStockQty();
                     return;
                 }
 
@@ -449,7 +486,7 @@
         // ============================================================
         refresh();
         loadStockQty();               // первый запрос qty из stock.json
-        setInterval(loadStockQty, 10000);  // обновляем каждые 10 сек
+        setInterval(loadStockQty, 10000);  // обновляем каждые 10 секунд
     </script>
 </body>
 </html>
