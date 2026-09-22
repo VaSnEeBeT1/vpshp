@@ -268,10 +268,9 @@
         var STOCK_URL        = "https://vpshp.onrender.com/api/stock";
 
         // ============================================================
-        //  LIQUIDS — жижи (главная страница)
+        //  LIQUIDS — жижи
         // ============================================================
         var LIQUIDS = [
-            // ─── Старые позиции ───────────────────────────────
             { id: "2",  name: "Elflio / Strawberry Banana",               img: "img/strawberrybanana.jpg",               price: 55 },
             { id: "3",  name: "Elflio / Cherry Lemon Peach",              img: "img/cherrylemonpeach.jpg",               price: 55 },
             { id: "4",  name: "Elflio / Blueberry Raspberry Pomegranate", img: "img/blueberryraspberrypomegranate.jpg",  price: 55 },
@@ -289,7 +288,6 @@
             { id: "21", name: "Elflio / Pink Grapefruit",                 img: "img/pinkgrapefruit.jpg",                 price: 55 },
             { id: "22", name: "Elflio / Blackcurrant anised (5%)",        img: "img/blackcurrant.jpg",                   price: 55 },
 
-            // ─── Новые позиции ────────────────────────────────
             { id: "100", name: "Elflio / Apple Pear",                     img: "img/ApplePear.jpg",                     price: 55 },
             { id: "101", name: "Elflio / Blueberry Rose Mint",            img: "img/BlueberryRoseMint.jpg",             price: 55 },
             { id: "102", name: "Elflio / Blueberry Sour Raspberry",       img: "img/BlueberrySourRaspberry.jpg",        price: 55 },
@@ -326,19 +324,18 @@
         ];
 
         // ============================================================
-        //  CARTRIDGES — картриджи (заполняй когда будут позиции)
-        //  id начинаются с 200, чтобы не пересекаться с жижами.
+        //  CARTRIDGES — картриджи
         // ============================================================
         var CARTRIDGES = [
-            // пример — раскомментируй и заполни когда будут реальные данные:
-            // { id: "200", name: "Картридж / Example", img: "img/example.jpg", price: 55 },
+            { id: "200", name: "Xros 0,4 om",     img: "img/xross.jpg", price: 55 },
+            { id: "201", name: "OXVA xlim 0,6 om", img: "img/oxva.jpg",  price: 55 },
         ];
 
         // ============================================================
         //  STATE
         // ============================================================
-        var currentCategory = "liquids";   // жижи — главная страница
-        var cart = {};                     // { id: qty }
+        var currentCategory = "liquids";
+        var cart = {};
         var STOCK_QTY = {};
 
         var tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
@@ -364,9 +361,6 @@
             return null;
         }
 
-        // ============================================================
-        //  ЗАГРУЗКА QTY ИЗ АДМИНКИ (stock.json)
-        // ============================================================
         function loadStockQty() {
             return fetch(STOCK_URL, { cache: "no-store" })
                 .then(function (r) { return r.json(); })
@@ -377,9 +371,6 @@
                 .catch(function () {});
         }
 
-        // ============================================================
-        //  ПЕРЕКЛЮЧЕНИЕ КАТЕГОРИЙ
-        // ============================================================
         function setCategory(cat) {
             currentCategory = cat;
             document.querySelectorAll(".cat-btn").forEach(function (btn) {
@@ -401,9 +392,6 @@
             });
         });
 
-        // ============================================================
-        //  RENDER
-        // ============================================================
         function renderCatalog() {
             var box = document.getElementById("catalog");
             box.innerHTML = "";
@@ -494,9 +482,6 @@
 
         function refresh() { renderCatalog(); renderCartBar(); }
 
-        // ============================================================
-        //  CLICK: + / −
-        // ============================================================
         document.addEventListener("click", function (e) {
             var t = e.target;
             if (!t.dataset || !t.dataset.act) return;
@@ -520,9 +505,6 @@
             if (tg) { try { tg.HapticFeedback.selectionChanged(); } catch (e) {} }
         });
 
-        // ============================================================
-        //  ОТПРАВКА
-        // ============================================================
         document.getElementById("btnOrder").addEventListener("click", sendOrder);
 
         function sendOrder() {
@@ -615,10 +597,7 @@
             toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2500);
         }
 
-        // ============================================================
-        //  INIT
-        // ============================================================
-        setCategory("liquids");   // жижи — главная
+        setCategory("liquids");
         loadStockQty();
         setInterval(loadStockQty, 10000);
     </script>
