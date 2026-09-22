@@ -45,6 +45,64 @@
         }
         .header p { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
 
+        /* ============ КАТЕГОРИИ ============ */
+        .categories {
+            padding: 14px 12px 4px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .cat-btn {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            text-align: left;
+            padding: 0;
+            transition: background-color 0.15s, border-color 0.15s;
+            font-family: inherit;
+            color: var(--text);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .cat-btn:active { background: var(--bg-card-hover); }
+        .cat-btn.active {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+        }
+        .cat-btn .cat-img {
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            background: #0a0a0e;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .cat-btn .cat-img img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .cat-btn .cat-img .ph {
+            font-size: 28px; color: #2a2a35; font-weight: 800;
+            letter-spacing: 2px; user-select: none;
+        }
+        .cat-btn .cat-label {
+            padding: 10px 12px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            color: var(--text);
+            text-align: center;
+        }
+        .cat-btn.active .cat-label {
+            color: var(--accent);
+        }
+
+        /* ============ КАТАЛОГ ============ */
         .catalog {
             padding: 14px 12px 20px;
             display: grid;
@@ -64,7 +122,6 @@
         }
         .card:active { background: var(--bg-card-hover); }
 
-        /* Карточка без наличия — серая, кнопки нет */
         .card.out-of-stock .card-img img,
         .card.out-of-stock .card-img .placeholder {
             opacity: 0.35;
@@ -172,7 +229,25 @@
 <body>
     <div class="header">
         <h1>ELFLIQ_VapeLab</h1>
-        <p>Каталог · только жидкости Elfliq</p>
+        <p id="headerSub">Каталог · только жидкости Elfliq</p>
+    </div>
+
+    <!-- Кнопки-категории -->
+    <div class="categories">
+        <button class="cat-btn active" data-cat="liquids" id="catLiquids">
+            <div class="cat-img">
+                <img src="zzh.jpg" alt="Жидкости" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                <div class="ph" style="display:none;">LIQ</div>
+            </div>
+            <div class="cat-label">Жидкости</div>
+        </button>
+        <button class="cat-btn" data-cat="cartridges" id="catCartridges">
+            <div class="cat-img">
+                <img src="cartr.jpg" alt="Картриджи" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                <div class="ph" style="display:none;">CART</div>
+            </div>
+            <div class="cat-label">Картриджи</div>
+        </button>
     </div>
 
     <div class="catalog" id="catalog">
@@ -192,7 +267,10 @@
         var ORDER_URL        = "https://vpshp.onrender.com/order";
         var STOCK_URL        = "https://vpshp.onrender.com/api/stock";
 
-        var CATALOG = [
+        // ============================================================
+        //  LIQUIDS — жижи (главная страница)
+        // ============================================================
+        var LIQUIDS = [
             // ─── Старые позиции ───────────────────────────────
             { id: "2",  name: "Elflio / Strawberry Banana",               img: "img/strawberrybanana.jpg",               price: 55 },
             { id: "3",  name: "Elflio / Cherry Lemon Peach",              img: "img/cherrylemonpeach.jpg",               price: 55 },
@@ -247,8 +325,21 @@
             { id: "132", name: "Elflio / Watermelon Cherry",              img: "img/WatermelonCherry.jpg",              price: 55 },
         ];
 
-        var cart = {};
-        var STOCK_QTY = {};   // сюда тянем qty из /api/stock (из stock.json)
+        // ============================================================
+        //  CARTRIDGES — картриджи (заполняй когда будут позиции)
+        //  id начинаются с 200, чтобы не пересекаться с жижами.
+        // ============================================================
+        var CARTRIDGES = [
+            // пример — раскомментируй и заполни когда будут реальные данные:
+            // { id: "200", name: "Картридж / Example", img: "img/example.jpg", price: 55 },
+        ];
+
+        // ============================================================
+        //  STATE
+        // ============================================================
+        var currentCategory = "liquids";   // жижи — главная страница
+        var cart = {};                     // { id: qty }
+        var STOCK_QTY = {};
 
         var tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
         if (tg) {
@@ -262,6 +353,17 @@
         }
         function fmtPrice(n) { return Number(n).toFixed(2) + " zł"; }
 
+        function getActiveCatalog() {
+            return currentCategory === "liquids" ? LIQUIDS : CARTRIDGES;
+        }
+        function getItemById(id) {
+            var list = LIQUIDS.concat(CARTRIDGES);
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].id === id) return list[i];
+            }
+            return null;
+        }
+
         // ============================================================
         //  ЗАГРУЗКА QTY ИЗ АДМИНКИ (stock.json)
         // ============================================================
@@ -272,8 +374,32 @@
                     STOCK_QTY = data || {};
                     refresh();
                 })
-                .catch(function () { /* работаем как есть */ });
+                .catch(function () {});
         }
+
+        // ============================================================
+        //  ПЕРЕКЛЮЧЕНИЕ КАТЕГОРИЙ
+        // ============================================================
+        function setCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll(".cat-btn").forEach(function (btn) {
+                btn.classList.toggle("active", btn.dataset.cat === cat);
+            });
+            var sub = document.getElementById("headerSub");
+            if (cat === "liquids") {
+                sub.textContent = "Каталог · только жидкости Elfliq";
+            } else {
+                sub.textContent = "Каталог · картриджи";
+            }
+            refresh();
+        }
+
+        document.querySelectorAll(".cat-btn").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                setCategory(btn.dataset.cat);
+                if (tg) { try { tg.HapticFeedback.selectionChanged(); } catch (e) {} }
+            });
+        });
 
         // ============================================================
         //  RENDER
@@ -282,12 +408,20 @@
             var box = document.getElementById("catalog");
             box.innerHTML = "";
 
-            CATALOG.forEach(function (item) {
-                // Значение из stock.json. Если ещё не пришло — считаем in stock.
+            var list = getActiveCatalog();
+
+            if (!list.length) {
+                var emptyDiv = document.createElement("div");
+                emptyDiv.className = "empty";
+                emptyDiv.textContent = "В этой категории пока ничего нет.";
+                box.appendChild(emptyDiv);
+                return;
+            }
+
+            list.forEach(function (item) {
                 var stockQty = STOCK_QTY[item.id];
                 var inStock  = (stockQty === undefined) ? true : (stockQty > 0);
 
-                // Если товара нет в наличии, из корзины его выкидываем
                 if (!inStock && cart[item.id]) {
                     delete cart[item.id];
                 }
@@ -301,12 +435,10 @@
                     imgHtml = '<div class="placeholder">' + esc(item.id) + '</div>';
                 }
 
-                // Статус строго из stock.json
                 var stockHtml = inStock
                     ? '<div class="stock">В наличии</div>'
                     : '<div class="stock out">Не в наличии</div>';
 
-                // Кнопки +/−  (только если есть наличие)
                 var controlsHtml = "";
                 if (inStock) {
                     var canAddMore = (stockQty === undefined) || (qty < stockQty);
@@ -344,7 +476,7 @@
             var totalItems = 0, totalSum = 0;
             Object.keys(cart).forEach(function (k) {
                 totalItems += cart[k];
-                var item = CATALOG.find(function (x) { return x.id === k; });
+                var item = getItemById(k);
                 if (item) totalSum += item.price * cart[k];
             });
 
@@ -396,9 +528,11 @@
         function sendOrder() {
             var lines = [], items = [], totalSum = 0;
 
-            CATALOG.forEach(function (item) {
-                var qty = cart[item.id] || 0;
+            Object.keys(cart).forEach(function (k) {
+                var qty = cart[k] || 0;
                 if (qty <= 0) return;
+                var item = getItemById(k);
+                if (!item) return;
                 var sum = item.price * qty;
                 totalSum += sum;
                 lines.push(item.name + " × " + qty + " = " + fmtPrice(sum));
@@ -484,9 +618,9 @@
         // ============================================================
         //  INIT
         // ============================================================
-        refresh();
-        loadStockQty();               // первый запрос qty из stock.json
-        setInterval(loadStockQty, 10000);  // обновляем каждые 10 секунд
+        setCategory("liquids");   // жижи — главная
+        loadStockQty();
+        setInterval(loadStockQty, 10000);
     </script>
 </body>
 </html>
