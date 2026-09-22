@@ -45,6 +45,7 @@ dp  = Dispatcher()
 app = Flask(__name__)
 
 DEFAULT_STOCK = {
+    # ─── Жидкости: старые позиции ─────────────────────
     "2":  {"name": "Elflio / Strawberry Banana",               "qty": 0},
     "3":  {"name": "Elflio / Cherry Lemon Peach",              "qty": 0},
     "4":  {"name": "Elflio / Blueberry Raspberry Pomegranate", "qty": 0},
@@ -61,6 +62,45 @@ DEFAULT_STOCK = {
     "20": {"name": "Elflio / Blackberry lemon",                "qty": 0},
     "21": {"name": "Elflio / Pink Grapefruit",                 "qty": 0},
     "22": {"name": "Elflio / Blackcurrant anised (5%)",        "qty": 0},
+
+    # ─── Жидкости: новые позиции ──────────────────────
+    "100": {"name": "Elflio / Apple Pear",                      "qty": 0},
+    "101": {"name": "Elflio / Blueberry Rose Mint",             "qty": 0},
+    "102": {"name": "Elflio / Blueberry Sour Raspberry",        "qty": 0},
+    "103": {"name": "Elflio / Blue Razz",                       "qty": 0},
+    "104": {"name": "Elflio / Blue Razz Lemonade",              "qty": 0},
+    "105": {"name": "Elflio / Cherry",                          "qty": 0},
+    "106": {"name": "Elflio / Cherry Cola",                     "qty": 0},
+    "107": {"name": "Elflio / Cool Mint",                       "qty": 0},
+    "108": {"name": "Elflio / Cuba Tobacco",                    "qty": 0},
+    "109": {"name": "Elflio / Double Apple",                    "qty": 0},
+    "110": {"name": "Elflio / Elfbull Ice",                     "qty": 0},
+    "111": {"name": "Elflio / Elf Jack",                        "qty": 0},
+    "112": {"name": "Elflio / Grape Cherry",                    "qty": 0},
+    "113": {"name": "Elflio / Green Grape Rose",                "qty": 0},
+    "114": {"name": "Elflio / Jasmine Raspberry",               "qty": 0},
+    "115": {"name": "Elflio / Kiwi Passion Fruit Guava",        "qty": 0},
+    "116": {"name": "Elflio / Ocean Mint",                      "qty": 0},
+    "117": {"name": "Elflio / P&B Cloudd",                      "qty": 0},
+    "118": {"name": "Elflio / Pineapple Colada",                "qty": 0},
+    "119": {"name": "Elflio / Pink Lemonade",                   "qty": 0},
+    "120": {"name": "Elflio / Pink Lemonade Soda",              "qty": 0},
+    "121": {"name": "Elflio / Raspberry Lychee",                "qty": 0},
+    "122": {"name": "Elflio / Rhubarb Snoow",                   "qty": 0},
+    "123": {"name": "Elflio / Snoow Tobacco",                   "qty": 0},
+    "124": {"name": "Elflio / Sour Watermelon Gummy",           "qty": 0},
+    "125": {"name": "Elflio / Spearmint",                       "qty": 0},
+    "126": {"name": "Elflio / Strawberry Cherry Lemon",         "qty": 0},
+    "127": {"name": "Elflio / Strawberry Ice",                  "qty": 0},
+    "128": {"name": "Elflio / Strawberry Kiwi",                 "qty": 0},
+    "129": {"name": "Elflio / Strawberry Raspberry Cherry Ice", "qty": 0},
+    "130": {"name": "Elflio / Strawberry Snoow",                "qty": 0},
+    "131": {"name": "Elflio / Watermelon",                      "qty": 0},
+    "132": {"name": "Elflio / Watermelon Cherry",               "qty": 0},
+
+    # ─── Картриджи ────────────────────────────────────
+    "200": {"name": "Xros 0,4 om",                              "qty": 0},
+    "201": {"name": "OXVA xlim 0,6 om",                         "qty": 0},
 }
 
 
@@ -70,7 +110,16 @@ def load_stock():
         return dict(DEFAULT_STOCK)
     try:
         with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+        # Дополняем новыми позициями, если их нет в файле
+        changed = False
+        for k, v in DEFAULT_STOCK.items():
+            if k not in data:
+                data[k] = v
+                changed = True
+        if changed:
+            save_stock(data)
+        return data
     except Exception:
         return dict(DEFAULT_STOCK)
 
