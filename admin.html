@@ -30,6 +30,7 @@
             -webkit-text-fill-color: transparent;
         }
         .sub { font-size: 12px; color: var(--text-dim); margin-bottom: 18px; }
+
         .toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
         .toolbar button {
             padding: 10px 16px; background: var(--card);
@@ -39,6 +40,35 @@
         }
         .toolbar button:hover { background: var(--card-hover); }
         .toolbar button.danger { color: var(--red); }
+
+        /* ============ TABS (категории) ============ */
+        .tabs {
+            display: flex; gap: 8px; margin-bottom: 16px;
+            padding: 4px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            max-width: 900px;
+            margin-left: auto; margin-right: auto;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px 14px;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 9px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background-color 0.15s, color 0.15s;
+        }
+        .tab:hover { color: var(--text); }
+        .tab.active {
+            background: var(--accent);
+            color: #fff;
+        }
 
         .grid {
             display: grid; grid-template-columns: 1fr;
@@ -123,7 +153,12 @@
 
     <div class="toolbar">
         <button onclick="loadStock()">🔄 Обновить</button>
-        <button class="danger" onclick="zeroAll()">🗑 Обнулить всё</button>
+        <button class="danger" onclick="zeroCurrent()">🗑 Обнулить текущий раздел</button>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-cat="liquids" onclick="setTab('liquids')">💧 Жидкости</button>
+        <button class="tab" data-cat="cartridges" onclick="setTab('cartridges')">🔌 Картриджи</button>
     </div>
 
     <div class="errbox" id="errbox"></div>
@@ -137,12 +172,17 @@
     <script>
         var KEY = new URLSearchParams(location.search).get("key") || "";
         var STOCK = {};
-        var CATALOG = [
+        var currentTab = "liquids";
+
+        // ============================================================
+        //  LIQUIDS — жижи (id 2–22 и 100–132)
+        // ============================================================
+        var LIQUIDS = [
             { id: "2",  name: "Elflio / Strawberry Banana",               img: "img/strawberrybanana.jpg" },
             { id: "3",  name: "Elflio / Cherry Lemon Peach",              img: "img/cherrylemonpeach.jpg" },
             { id: "4",  name: "Elflio / Blueberry Raspberry Pomegranate", img: "img/blueberryraspberrypomegranate.jpg" },
             { id: "6",  name: "Elflio / Raspberry Lychee",                img: "img/raspberrylychee.jpg" },
-            { id: "7",  name: "Elflio / Pineapple Ice",                   img: "img/pineappleice.jpg" },
+            { id: "7",  name: "Elflio / Pineapple Ice",                   img: "img/pineappleIce.jpg" },
             { id: "8",  name: "Elflio / Lemon Lime",                      img: "img/lemonlime.jpg" },
             { id: "10", name: "Elflio / Blueberry",                       img: "img/blueberry.jpg" },
             { id: "12", name: "Elflio / Sour apple",                      img: "img/sourapple.jpg" },
@@ -154,7 +194,61 @@
             { id: "20", name: "Elflio / Blackberry lemon",                img: "img/blackberrylemon.jpg" },
             { id: "21", name: "Elflio / Pink Grapefruit",                 img: "img/pinkgrapefruit.jpg" },
             { id: "22", name: "Elflio / Blackcurrant anised (5%)",        img: "img/blackcurrant.jpg" },
+
+            { id: "100", name: "Elflio / Apple Pear",                     img: "img/ApplePear.jpg" },
+            { id: "101", name: "Elflio / Blueberry Rose Mint",            img: "img/BlueberryRoseMint.jpg" },
+            { id: "102", name: "Elflio / Blueberry Sour Raspberry",       img: "img/BlueberrySourRaspberry.jpg" },
+            { id: "103", name: "Elflio / Blue Razz",                      img: "img/BlueRazz.jpg" },
+            { id: "104", name: "Elflio / Blue Razz Lemonade",             img: "img/BlueRazzLemonade.jpg" },
+            { id: "105", name: "Elflio / Cherry",                         img: "img/Cherry.jpg" },
+            { id: "106", name: "Elflio / Cherry Cola",                    img: "img/CherryCola.jpg" },
+            { id: "107", name: "Elflio / Cool Mint",                      img: "img/CoolMint.jpg" },
+            { id: "108", name: "Elflio / Cuba Tobacco",                   img: "img/CubaTobacco.jpg" },
+            { id: "109", name: "Elflio / Double Apple",                   img: "img/DoubleApple.jpg" },
+            { id: "110", name: "Elflio / Elfbull Ice",                    img: "img/ElfbullIce.jpg" },
+            { id: "111", name: "Elflio / Elf Jack",                       img: "img/ElfJack.jpg" },
+            { id: "112", name: "Elflio / Grape Cherry",                   img: "img/GrapeCherry.jpg" },
+            { id: "113", name: "Elflio / Green Grape Rose",               img: "img/GreenGrapeRose.jpg" },
+            { id: "114", name: "Elflio / Jasmine Raspberry",              img: "img/JasmineRaspberry.jpg" },
+            { id: "115", name: "Elflio / Kiwi Passion Fruit Guava",       img: "img/KiwiPassionFruitGuava.jpg" },
+            { id: "116", name: "Elflio / Ocean Mint",                     img: "img/OceanMint.jpg" },
+            { id: "117", name: "Elflio / P&B Cloudd",                     img: "img/PBCloudd.jpg" },
+            { id: "118", name: "Elflio / Pineapple Colada",               img: "img/PineappleColada.jpg" },
+            { id: "119", name: "Elflio / Pink Lemonade",                  img: "img/PinkLemonade.jpg" },
+            { id: "120", name: "Elflio / Pink Lemonade Soda",             img: "img/PinkLemonadeSoda.jpg" },
+            { id: "121", name: "Elflio / Raspberry Lychee",               img: "img/RaspberryLychee.jpg" },
+            { id: "122", name: "Elflio / Rhubarb Snoow",                  img: "img/RhubarbSnoow.jpg" },
+            { id: "123", name: "Elflio / Snoow Tobacco",                  img: "img/SnoowTobacco.jpg" },
+            { id: "124", name: "Elflio / Sour Watermelon Gummy",          img: "img/SourWatermelonGummy.jpg" },
+            { id: "125", name: "Elflio / Spearmint",                      img: "img/Spearmint.jpg" },
+            { id: "126", name: "Elflio / Strawberry Cherry Lemon",        img: "img/StrawberryCherryLemon.jpg" },
+            { id: "127", name: "Elflio / Strawberry Ice",                 img: "img/StrawberryIce.jpg" },
+            { id: "128", name: "Elflio / Strawberry Kiwi",                img: "img/StrawberryKiwi.jpg" },
+            { id: "129", name: "Elflio / Strawberry Raspberry Cherry Ice",img: "img/StrawberryRaspberryCherryIce.jpg" },
+            { id: "130", name: "Elflio / Strawberry Snoow",               img: "img/StrawberrySnoow.jpg" },
+            { id: "131", name: "Elflio / Watermelon",                     img: "img/Watermelon.jpg" },
+            { id: "132", name: "Elflio / Watermelon Cherry",              img: "img/WatermelonCherry.jpg" },
         ];
+
+        // ============================================================
+        //  CARTRIDGES — картриджи (id 200+)
+        // ============================================================
+        var CARTRIDGES = [
+            { id: "200", name: "Xros 0,4 om",      img: "img/xross.jpg" },
+            { id: "201", name: "OXVA xlim 0,6 om", img: "img/oxva.jpg" },
+        ];
+
+        function getActiveCatalog() {
+            return currentTab === "liquids" ? LIQUIDS : CARTRIDGES;
+        }
+
+        function setTab(cat) {
+            currentTab = cat;
+            document.querySelectorAll(".tab").forEach(function (t) {
+                t.classList.toggle("active", t.dataset.cat === cat);
+            });
+            render();
+        }
 
         function esc(s) {
             return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -201,7 +295,9 @@
             var box = document.getElementById("grid");
             box.innerHTML = "";
 
-            CATALOG.forEach(function (item) {
+            var list = getActiveCatalog();
+
+            list.forEach(function (item) {
                 var qty = (STOCK[item.id] && STOCK[item.id].qty) || 0;
                 var inStock = qty > 0;
 
@@ -267,9 +363,11 @@
             .catch(function () { showToast("Ошибка сети", true); });
         }
 
-        function zeroAll() {
-            if (!confirm("Обнулить количество у ВСЕХ позиций?")) return;
-            var ids = CATALOG.map(function (x) { return x.id; });
+        function zeroCurrent() {
+            var list = getActiveCatalog();
+            var label = currentTab === "liquids" ? "жидкостей" : "картриджей";
+            if (!confirm("Обнулить количество у ВСЕХ " + label + "?")) return;
+            var ids = list.map(function (x) { return x.id; });
             Promise.all(ids.map(function (id) {
                 return fetch("/admin/api/stock?key=" + encodeURIComponent(KEY), {
                     method: "POST",
