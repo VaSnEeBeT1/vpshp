@@ -45,7 +45,6 @@
         }
         .header p { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
 
-        /* ============ КАТЕГОРИИ ============ */
         .categories {
             padding: 14px 12px 4px;
             display: grid;
@@ -102,7 +101,6 @@
             color: var(--accent);
         }
 
-        /* ============ КАТАЛОГ ============ */
         .catalog {
             padding: 14px 12px 20px;
             display: grid;
@@ -161,12 +159,6 @@
             font-size: 16px; font-weight: 800; color: var(--price);
             letter-spacing: 0.2px; white-space: nowrap;
         }
-        .card .price .per {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-dim);
-            margin-left: 2px;
-        }
 
         .qty-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
         .qty-btn {
@@ -206,6 +198,12 @@
         }
         .cart-bar .cart-info b { color: var(--text); font-size: 15px; }
         .cart-bar .cart-info .total-sum { color: var(--price); font-weight: 800; }
+        .cart-bar .cart-info .old-sum {
+            color: var(--text-dim);
+            text-decoration: line-through;
+            font-size: 12px;
+            margin-left: 6px;
+        }
         .cart-bar .btn-order {
             flex-shrink: 0; padding: 12px 22px;
             background: var(--accent); color: #fff;
@@ -273,28 +271,33 @@
         var STOCK_URL        = "https://vpshp.onrender.com/api/stock";
 
         // ============================================================
-        //  ЦЕНОВЫЕ СЕТКИ (за штуку, зависит от общего кол-ва в корзине)
+        //  БАЗОВЫЕ ЦЕНЫ (то, что показывается в карточке)
+        // ============================================================
+        var BASE_PRICE = {
+            liquids: 55,
+            cartridges: 30
+        };
+
+        // ============================================================
+        //  СКИДОЧНЫЕ СЕТКИ (только для подсчёта итога корзины)
         //  Жидкости:  1шт → 55 | 2шт → 50 | 5шт → 45 | 10+ → 40
         //  Картриджи: 1-2шт → 30 | 3+ → 25
         // ============================================================
-        function pricePerItem(category, qty) {
-            if (qty <= 0) return 0;
+        function unitPriceWithDiscount(category, qtyInCart) {
+            if (qtyInCart <= 0) return BASE_PRICE[category] || 0;
             if (category === "liquids") {
-                if (qty >= 10) return 40;
-                if (qty >= 5)  return 45;
-                if (qty >= 2)  return 50;
+                if (qtyInCart >= 10) return 40;
+                if (qtyInCart >= 5)  return 45;
+                if (qtyInCart >= 2)  return 50;
                 return 55;
             }
             if (category === "cartridges") {
-                if (qty >= 3) return 25;
+                if (qtyInCart >= 3) return 25;
                 return 30;
             }
-            return 0;
+            return BASE_PRICE[category] || 0;
         }
 
-        // ============================================================
-        //  LIQUIDS — жижи
-        // ============================================================
         var LIQUIDS = [
             { id: "2",  name: "Elflio / Strawberry Banana",               img: "img/strawberrybanana.jpg",               cat: "liquids" },
             { id: "3",  name: "Elflio / Cherry Lemon Peach",              img: "img/cherrylemonpeach.jpg",               cat: "liquids" },
@@ -353,12 +356,19 @@
             { id: "201", name: "OXVA xlim 0,6 om", img: "img/oxva.jpg",  cat: "cartridges" },
         ];
 
-        // ============================================================
-        //  STATE
-        // ============================================================
         var currentCategory = "liquids";
         var cart = {};
         var STOCK_QTY = {};
+
+        // Восстанавливаем корзину из localStorage (чтобы не сбрасывалась при перезагрузке)
+        try {
+            var savedCart = localStorage.getItem("elfliq_cart");
+            if (savedCart) cart = JSON.parse(savedCart) || {};
+        } catch (e) { cart = {}; }
+
+        function saveCart() {
+            try { localStorage.setItem("elfliq_cart", JSON.stringify(cart)); } catch (e) {}
+        }
 
         var tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
         if (tg) {
@@ -383,7 +393,6 @@
             return null;
         }
 
-        // Считаем, сколько всего штук в корзине по каждой категории
         function cartCountByCat(cat) {
             var total = 0;
             Object.keys(cart).forEach(function (k) {
@@ -393,18 +402,23 @@
             return total;
         }
 
-        // Итоговая цена всей корзины (с учётом сеток)
-        function cartTotal() {
-            var liquidsQty    = cartCountByCat("liquids");
-            var cartridgesQty = cartCountByCat("cartridges");
-            var lp = pricePerItem("liquids", liquidsQty);
-            var cp = pricePerItem("cartridges", cartridgesQty);
-            return liquidsQty * lp + cartridgesQty * cp;
+        // Полная стоимость корзины без скидки (по базовым ценам)
+        function cartTotalBase() {
+            var sum = 0;
+            Object.keys(cart).forEach(function (k) {
+                var item = getItemById(k);
+                if (item) sum += BASE_PRICE[item.cat] * cart[k];
+            });
+            return sum;
         }
 
-        // Сколько сейчас стоит 1 шт этой категории (по текущему кол-ву в корзине)
-        function currentUnitPrice(cat) {
-            return pricePerItem(cat, cartCountByCat(cat));
+        // Итоговая стоимость корзины со скидкой
+        function cartTotalDiscounted() {
+            var liquidsQty    = cartCountByCat("liquids");
+            var cartridgesQty = cartCountByCat("cartridges");
+            var lp = unitPriceWithDiscount("liquids", liquidsQty);
+            var cp = unitPriceWithDiscount("cartridges", cartridgesQty);
+            return liquidsQty * lp + cartridgesQty * cp;
         }
 
         function loadStockQty() {
@@ -443,8 +457,7 @@
             box.innerHTML = "";
 
             var list = getActiveCatalog();
-            var unitPrice = currentUnitPrice(currentCategory);
-            var cartQty = cartCountByCat(currentCategory);
+            var basePrice = BASE_PRICE[currentCategory];
 
             if (!list.length) {
                 var emptyDiv = document.createElement("div");
@@ -457,10 +470,6 @@
             list.forEach(function (item) {
                 var stockQty = STOCK_QTY[item.id];
                 var inStock  = (stockQty === undefined) ? true : (stockQty > 0);
-
-                if (!inStock && cart[item.id]) {
-                    delete cart[item.id];
-                }
 
                 var qty = cart[item.id] || 0;
 
@@ -492,9 +501,6 @@
                     }
                 }
 
-                // Отображаем цену за штуку при текущем количестве в корзине
-                var priceLine = unitPrice + ' zł<span class="per">/шт</span>';
-
                 var card = document.createElement("div");
                 card.className = "card" + (inStock ? "" : " out-of-stock");
                 card.innerHTML =
@@ -503,7 +509,7 @@
                         '<div class="name">' + esc(item.name) + '</div>' +
                         stockHtml +
                         '<div class="bottom-row">' +
-                            '<div class="price">' + priceLine + '</div>' +
+                            '<div class="price">' + basePrice + ' zł</div>' +
                             '<div class="qty-controls">' + controlsHtml + '</div>' +
                         '</div>' +
                     '</div>';
@@ -514,7 +520,9 @@
         function renderCartBar() {
             var totalItems = 0;
             Object.keys(cart).forEach(function (k) { totalItems += cart[k]; });
-            var totalSum = cartTotal();
+
+            var baseSum = cartTotalBase();
+            var finalSum = cartTotalDiscounted();
 
             var info = document.getElementById("cartInfo");
             var btn = document.getElementById("btnOrder");
@@ -523,7 +531,10 @@
                 info.innerHTML = "Корзина пуста";
                 btn.disabled = true;
             } else {
-                info.innerHTML = "В корзине: <b>" + totalItems + "</b> шт · <span class=\"total-sum\">" + fmtPrice(totalSum) + "</span>";
+                var oldHtml = (finalSum < baseSum)
+                    ? '<span class="old-sum">' + fmtPrice(baseSum) + '</span>'
+                    : '';
+                info.innerHTML = "В корзине: <b>" + totalItems + "</b> шт · <span class=\"total-sum\">" + fmtPrice(finalSum) + "</span>" + oldHtml;
                 btn.disabled = false;
             }
         }
@@ -550,6 +561,7 @@
                 }
             }
             refresh();
+            saveCart();
             if (tg) { try { tg.HapticFeedback.selectionChanged(); } catch (e) {} }
         });
 
@@ -560,8 +572,8 @@
 
             var liquidsQty    = cartCountByCat("liquids");
             var cartridgesQty = cartCountByCat("cartridges");
-            var lp = pricePerItem("liquids", liquidsQty);
-            var cp = pricePerItem("cartridges", cartridgesQty);
+            var lp = unitPriceWithDiscount("liquids", liquidsQty);
+            var cp = unitPriceWithDiscount("cartridges", cartridgesQty);
 
             Object.keys(cart).forEach(function (k) {
                 var qty = cart[k] || 0;
@@ -628,6 +640,7 @@
                 }
 
                 cart = {};
+                saveCart();
                 refresh();
                 btn.disabled = false;
                 btn.textContent = "Заказать";
